@@ -38,6 +38,13 @@ services:
       - postgres
       - redis
 
+  umami:
+    image: docker.umami.is/umami-software/umami:postgresql-latest
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    env_file: .env
+
   nginx:
     build:
       context: ./frontend

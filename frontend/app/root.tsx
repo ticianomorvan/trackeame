@@ -10,6 +10,7 @@ import {
 import type { Route } from "./+types/root";
 
 import NavigationBar from "./components/navigation-bar";
+import ThirdParty from "./third-party";
 import Providers from "./providers";
 
 import "@radix-ui/themes/styles.css";
@@ -36,6 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <ThirdParty />
       </head>
       <body>
         {children}

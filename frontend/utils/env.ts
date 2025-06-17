@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const envSchema = z.object({
   VITE_API_URL: z.string(),
+  VITE_ANALYTICS_URL: z.string(),
+  VITE_ANALYTICS_WEBSITE_ID: z.string(),
   VITE_AUTH0_DOMAIN: z.string(),
   VITE_AUTH0_AUDIENCE: z.string(),
   VITE_AUTH0_CLIENT_ID: z.string(),
