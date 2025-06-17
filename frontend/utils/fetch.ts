@@ -1,6 +1,6 @@
 import type { CustomResponse } from "types/response";
 
-const API_URL = typeof import.meta.env.VITE_API_UR !== "undefined" && import.meta.env.VITE_API_URL
+const API_URL = typeof import.meta.env.VITE_API_URL !== "undefined" && import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL
   : "http://localhost:8000";
 
