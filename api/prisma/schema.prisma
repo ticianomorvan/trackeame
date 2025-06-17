@@ -7,7 +7,6 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -20,7 +19,7 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  auth0Id String @unique @map("auth0_id")
+  platformId String @unique @map("platform_id") // Unique platform user's account ID (e.g. Firebase, Google, etc.)
 
   name String?
   email String @unique
