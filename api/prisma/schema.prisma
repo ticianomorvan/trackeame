@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  auth0Id String @unique @map("auth0_id")
+
+  name String?
+  email String @unique
+  picture String?
+
+  packages Package[]
+
+  @@map("users")
+}
+
+model Provider {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name String
+  slug String @unique
+  website String?
+
+  packages Package[]
+
+  @@map("providers")
+}
+
+model Package {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  lastStatus String? @map("last_status")
+  lastEventAt DateTime? @map("last_event_at")
+  lastCheckedAt DateTime @default(now()) @map("last_checked_at")
+
+  trackingCode String @map("tracking_code")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String @map("provider_id")
+
+  events PackageEvent[]
+
+  @@unique([trackingCode, providerId])
+  @@map("packages")
+}
+
+model PackageEvent {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  occurredAt DateTime @default(now()) @map("occurred_at")
+
+  status String?
+  location String?
+  description String?
+  rawStatus String? @map("raw_status")
+
+  package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  packageId String @map("package_id")
+
+  @@unique([packageId, occurredAt])
+  @@map("package_events")
+}
