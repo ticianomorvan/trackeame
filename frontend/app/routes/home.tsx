@@ -1,10 +1,12 @@
 import type { Route } from "./+types/home";
-
-import { useAuth0 } from "@auth0/auth0-react";
+import { signInWithPopup } from "firebase/auth";
 import { ArrowDownIcon, TruckIcon } from "lucide-react";
-import { Button, Flex, Heading, Link, Section, Strong, Text } from "@radix-ui/themes";
+import { Button, Flex, Heading, Link, Strong, Text } from "@radix-ui/themes";
+
+import { googleAuthProvider } from "utils/auth";
 
 import { PROVIDER_LOGOS } from "./constants";
+import { auth } from "utils/firebase";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -17,14 +19,13 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const { loginWithRedirect } = useAuth0();
-
   const handleRegister = () => {
-    loginWithRedirect({
-      appState: {
-        returnTo: "/packages/register",
-      },
-    });
+    signInWithPopup(auth, googleAuthProvider)
+      .then((result) => console.log(result.user))
+      .catch((error) => {
+        console.error("Error during sign-in:", error);
+        // Handle error appropriately, e.g., show a notification to the user
+      });
   }
 
   return (

@@ -1,11 +1,15 @@
 import { Link } from "react-router";
-import { useAuth0 } from "@auth0/auth0-react";
+import { signInWithPopup } from "firebase/auth";
 import { LogInIcon, LogOutIcon, PackageIcon, TruckIcon } from "lucide-react"
 import { Avatar, Button, DropdownMenu, Flex, Heading, Text } from "@radix-ui/themes";
 
-export default function NavigationBar() {
-  const { user } = useAuth0()
+import { googleAuthProvider } from "utils/auth";
+import { useAuth } from "~/contexts/auth-context";
+import { auth } from "utils/firebase";
 
+export default function NavigationBar() {
+  const { user } = useAuth();
+  
   return (
     <nav
       className="fixed top-0 left-0 w-full z-50"
@@ -70,15 +74,13 @@ export default function NavigationBar() {
 }
 
 function RedirectToLogin() {
-  const { loginWithRedirect } = useAuth0()
-
   const handleLogin = () => {
-    loginWithRedirect({
-      appState: { targetUrl: window.location.pathname },
-      authorizationParams: {
-        redirect_uri: window.location.origin
-      }
-    })
+    signInWithPopup(auth, googleAuthProvider)
+      .then((result) => console.log(result.user))
+      .catch((error) => {
+        console.error("Error during sign-in:", error);
+        // Handle error appropriately, e.g., show a notification to the user
+      });
   }
 
   return (
@@ -90,20 +92,14 @@ function RedirectToLogin() {
 }
 
 function UserAvatar() {
-  const { user, logout } = useAuth0()
+  const { user } = useAuth();
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout({
-      logoutParams: {
-        returnTo: window.location.origin
-      }
-    });
-  }
+  const handleLogout = () => auth.signOut()
 
-  const avatarFallback = user.name
-    ? user.name.split(" ").map(name => name[0]).join("")
+  const avatarFallback = user.displayName
+    ? user.displayName.split(" ").map(name => name[0]).join("")
     : "N/A";
 
   return (
@@ -112,14 +108,14 @@ function UserAvatar() {
       align={"center"}
     >
       <Text>
-        ¡Hola, {user.given_name || user.name || "Usuario"}! 👋
+        ¡Hola, {user.displayName || "Usuario"}! 👋
       </Text>
 
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <Avatar
-            src={user.picture}
-            alt={user.name}
+            src={user.photoURL || ""}
+            alt={user.displayName || "Avatar"}
             size={"2"}
             radius={"full"}
             fallback={avatarFallback}
