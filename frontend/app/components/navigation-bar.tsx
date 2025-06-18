@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { useMediaQuery } from "usehooks-ts";
 import { Link, useNavigate } from "react-router";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { LogInIcon, LogOutIcon, PackageIcon, TruckIcon } from "lucide-react"
@@ -11,7 +12,10 @@ import { useAuth } from "~/contexts/auth-context";
 
 export default function NavigationBar() {
   const { user } = useAuth();
-  
+
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const iconSize = isMobile ? 16 : 20;
+
   return (
     <nav
       className="fixed top-0 left-0 w-full z-50"
@@ -43,8 +47,8 @@ export default function NavigationBar() {
                 <li>
                   <Link to="/packages">
                     <Flex align={"center"} gap={"0.5rem"}>
-                      <PackageIcon size={14} color={"var(--accent-a11)"} />
-                      <Text color={"lime"}>Mis paquetes</Text>
+                      <PackageIcon size={iconSize} color={"var(--accent-a11)"} />
+                      <Text color={"lime"} hidden={isMobile}>Mis paquetes</Text>
                     </Flex>
                   </Link>
                 </li>
@@ -56,8 +60,8 @@ export default function NavigationBar() {
                       gap={"0.5rem"}
                       className={"bg-[var(--accent-9)] hover:bg-[var(--accent-10)] px-2 py-1 rounded"}
                     >
-                      <TruckIcon size={14} color={"var(--accent-a11)"} />
-                      <Text color={"lime"}>Registrar paquete</Text>
+                      <TruckIcon size={iconSize} color={"var(--accent-a11)"} />
+                      <Text color={"lime"} hidden={isMobile}>Registrar paquete</Text>
                     </Flex>
                   </Link>
                 </li>
@@ -97,8 +101,8 @@ function RedirectToLogin() {
 
 function UserAvatar() {
   const { user } = useAuth();
-
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   if (!user) return null;
 
@@ -123,7 +127,7 @@ function UserAvatar() {
       gap={"1rem"}
       align={"center"}
     >
-      <Text>
+      <Text hidden={isMobile}>
         ¡Hola, {user.displayName || "Usuario"}! 👋
       </Text>
 

@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { BadgeCheckIcon, TriangleAlertIcon } from "lucide-react";
-import { Button, Callout, Flex, Select, Spinner, TextField } from "@radix-ui/themes";
+import { Button, Callout, Flex, Select, Spinner, Text, TextField } from "@radix-ui/themes";
 
 import type { PackageWithProvider } from "types/package";
 import type { Provider } from "types/provider";
@@ -13,6 +13,7 @@ import { fetcher } from "utils/fetch";
 
 import { useAuth } from "~/contexts/auth-context";
 import { PROVIDER_LOGOS } from "~/routes/constants";
+import { toast } from "sonner";
 
 interface UpsertPackageMutationVariables {
   trackingCode: string;
@@ -80,8 +81,14 @@ export default function UpsertPackage() {
     event.preventDefault();
 
     if (!trackingCode || !providerSlug) {
-      alert("Please fill in all fields.");
+      toast.error("Por favor, completa todos los campos antes de enviar.");
       
+      return;
+    }
+
+    if (providerSlug === ProviderSlug.OCA) {
+      toast.error("El soporte de OCA está en proceso. Por favor, seleccioná otro proveedor.");
+    
       return;
     }
 
@@ -174,33 +181,40 @@ export default function UpsertPackage() {
             gap={"0.5rem"}
             align={"center"}
           >
-            {providerSlug && (
-              <img
-                src={PROVIDER_LOGOS[providerSlug as ProviderSlug]}
-                alt="Provider Logo"
-                className="w-20 h-8 object-contain"
-              />
-            )}
+            <Flex
+              gap={"0.5rem"}
+              align={"center"}
+            >
+              {providerSlug && (
+                <img
+                  src={PROVIDER_LOGOS[providerSlug as ProviderSlug]}
+                  alt="Provider Logo"
+                  className="w-20 h-8 object-contain"
+                />
+              )}
 
-            <Select.Root value={providerSlug} onValueChange={setProviderSlug}>
-              <Select.Trigger placeholder={"Seleccioná un proveedor"} />
+              <Select.Root value={providerSlug} onValueChange={setProviderSlug}>
+                <Select.Trigger placeholder={"Seleccioná un proveedor"} />
 
-              <Select.Content>
-                {providers.data?.map((provider: Provider) => (
-                  <Select.Item key={provider.id} value={provider.slug}>
-                    {provider.name}
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Root>
+                <Select.Content>
+                  {providers.data?.map((provider: Provider) => (
+                    <Select.Item key={provider.id} value={provider.slug}>
+                      {provider.name}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            </Flex>
+
+            <TextField.Root
+              id={"tracking-code"}
+              value={trackingCode}
+              className={"my-4 grow"}
+              aria-label={"Código de seguimiento"}
+              placeholder={`Ejemplo: ${trackingCodeExample}`}
+              onChange={(e) => setTrackingCode(e.target.value)}
+            />
           </Flex>
-
-          <TextField.Root
-            value={trackingCode}
-            onChange={(e) => setTrackingCode(e.target.value)}
-            placeholder={`Código de seguimiento, por ejemplo: ${trackingCodeExample}`}
-            className={"w-full"}
-          />
 
           <Button type={"submit"} disabled={upsertPackage.isPending}>
             {upsertPackage.isPending ? "Registrando paquete..." : "Registrar"}

@@ -25,8 +25,12 @@ export default function RegisterPackage() {
         direction={"column"}
         className={"max-w-[36rem] w-full p-6 bg-[var(--accent-surface)] rounded-lg shadow-sm"}
       >
-        <Heading as="h1" className="text-2xl font-bold mb-4">
+        <Heading as={"h2"} className={"text-2xl font-bold mb-4"}>
           Registrar paquete
+        </Heading>
+
+        <Heading as={"h3"} size={"4"} weight={"regular"}>
+          Seleccioná el proveedor y el código de seguimiento del paquete que querés registrar.
         </Heading>
         
         <UpsertPackage />

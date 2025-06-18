@@ -1,12 +1,13 @@
 import type { Route } from "./+types/home";
+import { useMediaQuery } from "usehooks-ts";
 import { signInWithPopup } from "firebase/auth";
 import { ArrowDownIcon, TruckIcon } from "lucide-react";
 import { Button, Flex, Heading, Link, Strong, Text } from "@radix-ui/themes";
 
+import { auth } from "utils/firebase";
 import { googleAuthProvider } from "utils/auth";
 
 import { PROVIDER_LOGOS } from "./constants";
-import { auth } from "utils/firebase";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -19,6 +20,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   const handleRegister = () => {
     signInWithPopup(auth, googleAuthProvider)
       .then((result) => console.log(result.user))
@@ -30,6 +33,7 @@ export default function Home() {
 
   return (
     <Flex
+      p={{ initial: "1rem", xs: "4rem", sm: "2rem", lg: "0rem" }}
       gap={"2rem"}
       align={"center"}
       justify={"center"}
@@ -63,13 +67,14 @@ export default function Home() {
           <Flex
             gap={"1.25rem"}
             align={"center"}
+            hidden={isMobile}
             className={"w-fit bg-[var(--accent-surface)] py-2 px-4 rounded-lg shadow-sm"}
           >
             <Flex
               gap={"0.5rem"}
               align={"center"}
             >
-              <TruckIcon color={"var(--accent-a11)"} /> 
+              <TruckIcon color={"var(--accent-a11)"} className={"hidden md:block"} /> 
 
               <Text color={"lime"}>
                 Seguí tus envíos de las plataformas que ya usás
@@ -91,26 +96,12 @@ export default function Home() {
             </Flex>
           </Flex>
 
-          <Flex
-            gap={"1rem"}
-            align={"center"}
+          <Button
+            size={{ initial: "3", xs: "4" }}
+            onClick={handleRegister}
           >
-            <Button onClick={handleRegister}>
-              Registrá tus pedidos gratis
-            </Button>
-
-            <Flex
-              gap={"0.5rem"}
-              align={"center"}
-              className={"text-[var(--gray-a11)]"}
-            >
-              <Text>
-                Mirá como funciona
-              </Text>
-
-              <ArrowDownIcon size={14} />
-            </Flex>
-          </Flex>
+            Registrá tus pedidos gratis
+          </Button>
         </Flex>
       </div>
 
@@ -118,7 +109,7 @@ export default function Home() {
         gap={"4rem"}
         align={"center"}
         justify={"center"}
-        className={"mt-8"}
+        className={"mt-8 flex-col md:flex-row"}
       >
         <Flex
           gap={"1rem"}
@@ -152,8 +143,7 @@ export default function Home() {
         gap={"4rem"}
         align={"center"}
         justify={"center"}
-        className={"mt-8"}
-        direction={"row-reverse"}
+        className={"mt-8 flex-col md:flex-row-reverse"}
       >
         <Flex
           gap={"1rem"}
@@ -162,14 +152,14 @@ export default function Home() {
           <Heading
             as={"h2"}
             size={"8"}
-            align={"right"}
+            align={{ initial: "left", sm: "right" }}
           >
             No te pierdas de ningún detalle
           </Heading>
 
           <Text
             size={"6"}
-            align={"right"}
+            align={{ initial: "left", sm: "right" }}
             className={"max-w-[48ch]"}
           >
             Llevá la pista de cada paso  de tu pedido, desde que sale del vendedor hasta que llega a tu puerta.
