@@ -1,12 +1,13 @@
 import 'fastify';
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { app } from 'firebase-admin';
 
 import { User } from '../generated/prisma';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    authenticateAndUpsertUser: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    firebase: app.App;
   }
 
   interface FastifyRequest {

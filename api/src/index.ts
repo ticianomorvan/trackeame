@@ -4,11 +4,12 @@ import Fastify from "fastify"
 import fastifyCors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
 import fastifyApiReference from "@scalar/fastify-api-reference";
-import fastifyAuth0Api from "@auth0/auth0-fastify-api"
 
+// Helpers
 import { env } from "./lib/env";
 
-import authenticateAndUpsertUser from "./plugins/authenticate-and-upsert-user";
+// Plugins
+import firebasePlugin from "./plugins/firebase";
 
 // Routes
 import packagesRoutes from "./routes/packages";
@@ -23,13 +24,6 @@ fastify.register(fastifyCors, {
   exposedHeaders: ["Content-Length", "X-Total-Count"],
   credentials: true,
 })
-
-fastify.register(fastifyAuth0Api, {
-  domain: env.AUTH0_DOMAIN,
-  audience: env.AUTH0_AUDIENCE,
-})
-
-fastify.register(authenticateAndUpsertUser)
 
 fastify.register(fastifySwagger, {
   openapi: {
@@ -52,9 +46,12 @@ fastify.register(fastifySwagger, {
   }
 })
 
-fastify.register(fastifyApiReference, {
-  routePrefix: "/reference"
-})
+fastify.register(
+  fastifyApiReference,
+  { routePrefix: "/reference" }
+)
+
+fastify.register(firebasePlugin)
 
 fastify.register(packagesRoutes)
 fastify.register(providersRoutes)

@@ -9,7 +9,7 @@ import { packagesQueue, PackagesQueueJobName, PackagesQueueJobPayload } from "..
 
 const packagesRoutes: FastifyPluginAsync = async (fastify) => {
   // TODO: implement validation for providerSlug and trackingCode
-  fastify.post("/packages", { preHandler: [fastify.requireAuth(), fastify.authenticateAndUpsertUser] }, async (request, reply) => {
+  fastify.post("/packages", async (request, reply) => {
     const user = request.internal_user;
 
     if (!user) {
@@ -62,7 +62,7 @@ const packagesRoutes: FastifyPluginAsync = async (fastify) => {
     }
   })
 
-  fastify.get("/packages", { preHandler: [fastify.requireAuth(), fastify.authenticateAndUpsertUser] }, async (request, reply) => {
+  fastify.get("/packages", async (request, reply) => {
     const user = request.internal_user;
 
     if (!user) {
@@ -108,7 +108,7 @@ const packagesRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   // TODO: implement validation for id
-  fastify.get("/packages/:id", { preHandler: [fastify.requireAuth(), fastify.authenticateAndUpsertUser] }, async (request, reply) => {
+  fastify.get("/packages/:id", async (request, reply) => {
     const user = request.internal_user;
 
     if (!user) {
