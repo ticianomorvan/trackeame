@@ -1,13 +1,13 @@
 import 'fastify';
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { app } from 'firebase-admin';
 
-import { User } from '../generated/prisma';
+import type { User } from '../generated/prisma';
+import type { App } from 'firebase-admin/app';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    firebase: app.App;
+    firebase: App;
   }
 
   interface FastifyRequest {

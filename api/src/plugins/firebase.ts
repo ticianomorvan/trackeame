@@ -1,19 +1,25 @@
-import { FastifyPluginAsync } from "fastify";
-import { readFileSync } from "node:fs";
-import { initializeApp } from "firebase-admin";
-import { DecodedIdToken, getAuth } from "firebase-admin/auth";
-import { cert } from "firebase-admin/app";
+import path from "node:path";
 import fp from "fastify-plugin";
+import { readFile } from "node:fs/promises";
+import { FastifyPluginAsync } from "fastify"
+;
+import { initializeApp } from "firebase-admin/app";
+import { DecodedIdToken, getAuth } from "firebase-admin/auth";
+import { credential } from "firebase-admin";
 
 import { FailedResponse, ResponseType } from "../types/response";
 import { prisma } from "../lib/prisma";
 import { User } from "../generated/prisma";
 
 const firebasePlugin: FastifyPluginAsync = async (fastify) => {
-  const keyPath = new URL("/config/service-account.json", process.cwd());
-  const keyJson = JSON.parse(readFileSync(keyPath, "utf-8"));
-  const firebase = initializeApp({ credential: cert(keyJson) })
+  fastify.log.info("[firebase-plugin] Initializing Firebase Admin SDK...");
 
+  const filePath = path.resolve(process.cwd(), "config", "service-account.json");
+  const fileJson = await readFile(filePath, "utf-8")
+  const firebase = initializeApp({ credential: credential.cert(JSON.parse(fileJson)) })
+
+  fastify.log.info("[firebase-plugin] Firebase Admin SDK initialized successfully.");
+  
   fastify.decorate("firebase", firebase);
   fastify.decorateRequest("internal_user", null);
 
