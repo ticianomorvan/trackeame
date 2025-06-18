@@ -1,11 +1,13 @@
-import { Link } from "react-router";
-import { signInWithPopup } from "firebase/auth";
+import { toast } from "sonner";
+import { Link, useNavigate } from "react-router";
+import { signInWithPopup, signOut } from "firebase/auth";
 import { LogInIcon, LogOutIcon, PackageIcon, TruckIcon } from "lucide-react"
 import { Avatar, Button, DropdownMenu, Flex, Heading, Text } from "@radix-ui/themes";
 
-import { googleAuthProvider } from "utils/auth";
-import { useAuth } from "~/contexts/auth-context";
 import { auth } from "utils/firebase";
+import { googleAuthProvider } from "utils/auth";
+
+import { useAuth } from "~/contexts/auth-context";
 
 export default function NavigationBar() {
   const { user } = useAuth();
@@ -75,12 +77,14 @@ export default function NavigationBar() {
 
 function RedirectToLogin() {
   const handleLogin = () => {
-    signInWithPopup(auth, googleAuthProvider)
-      .then((result) => console.log(result.user))
-      .catch((error) => {
-        console.error("Error during sign-in:", error);
-        // Handle error appropriately, e.g., show a notification to the user
-      });
+    toast.promise(
+      signInWithPopup(auth, googleAuthProvider),
+      {
+        loading: "Termina de iniciar sesión en la ventana...",
+        success: "Has iniciado sesión correctamente.",
+        error: "Error al iniciar sesión. Inténtalo de nuevo más tarde."
+      }
+    );
   }
 
   return (
@@ -94,9 +98,21 @@ function RedirectToLogin() {
 function UserAvatar() {
   const { user } = useAuth();
 
+  const navigate = useNavigate();
+
   if (!user) return null;
 
-  const handleLogout = () => auth.signOut()
+  const handleLogout = () => {
+    toast.promise(signOut(auth), {
+      loading: "Cerrando sesión...",
+      success: () => {
+        navigate("/");
+
+        return "Has cerrado sesión correctamente.";
+      },
+      error: "Error al cerrar sesión. Inténtalo de nuevo más tarde."
+    })
+  }
 
   const avatarFallback = user.displayName
     ? user.displayName.split(" ").map(name => name[0]).join("")

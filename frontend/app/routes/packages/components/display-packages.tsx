@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { useAuth0 } from "@auth0/auth0-react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, TriangleAlertIcon } from "lucide-react";
 import { Badge, Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
@@ -12,6 +11,7 @@ import { ResponseType } from "types/response";
 import { PackageEventStatus } from "types/package-event";
 import { fetcher } from "utils/fetch";
 
+import { useAuth } from "~/contexts/auth-context";
 import { PROVIDER_LOGOS } from "~/routes/constants";
 import { getStatusBadgeColor, getStatusBadgeText } from "./utils";
 
@@ -19,17 +19,22 @@ const MAX_PACKAGES_PER_PAGE = 5;
 
 export default function DisplayPackages() {
   const limit = MAX_PACKAGES_PER_PAGE // This is temporary, just to test.
-
-  const { getAccessTokenSilently } = useAuth0()
+  
+  const auth = useAuth();
+  
   const [page, setPage] = useState<number>(1);
   
   const packages = useQuery({
     queryKey: ["packages", page],
     queryFn: async () => {
-      const token = await getAccessTokenSilently();
+      if (!auth.user) {
+        throw new Error("Por favor, inicia sesión para continuar.");
+      }
+
+      const idToken = await auth.user.getIdToken();
       
       const response = await fetcher<PaginatedPackagesWithProvider>(`/packages?limit=${limit}&page=${page}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${idToken}` }
       });
 
       if (response.status === ResponseType.Error) {

@@ -1,5 +1,4 @@
 import { Link } from "react-router";
-import { useAuth0 } from "@auth0/auth0-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { BadgeCheckIcon, TriangleAlertIcon } from "lucide-react";
@@ -12,6 +11,7 @@ import { ResponseType } from "types/response";
 import { ProviderSlug } from "types/provider";
 import { fetcher } from "utils/fetch";
 
+import { useAuth } from "~/contexts/auth-context";
 import { PROVIDER_LOGOS } from "~/routes/constants";
 
 interface UpsertPackageMutationVariables {
@@ -20,7 +20,7 @@ interface UpsertPackageMutationVariables {
 }
   
 export default function UpsertPackage() {
-  const { getAccessTokenSilently } = useAuth0();
+  const auth = useAuth();
 
   const [trackingCode, setTrackingCode] = useState<string>("");
   const [providerSlug, setProviderSlug] = useState<string>("");
@@ -28,10 +28,14 @@ export default function UpsertPackage() {
   const providers = useQuery({
     queryKey: ["providers"],
     queryFn: async () => {
-      const token = await getAccessTokenSilently();
+      if (!auth.user) {
+        throw new Error("Por favor, inicia sesión para continuar.");
+      }
+
+      const idToken = await auth.user.getIdToken()
 
       const response = await fetcher<Provider[]>("/providers", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${idToken}` }
       });
 
       if (response.status === ResponseType.Error) {
@@ -47,11 +51,15 @@ export default function UpsertPackage() {
   const upsertPackage = useMutation({
     mutationKey: ["upsert-package"],
     mutationFn: async ({ trackingCode, providerSlug }: UpsertPackageMutationVariables) => {
-      const token = await getAccessTokenSilently();
+      if (!auth.user) {
+        throw new Error("Por favor, inicia sesión para continuar.");
+      }
+
+      const idToken = await auth.user.getIdToken()
 
       const response = await fetcher<PackageWithProvider>("/packages", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
           trackingCode,
           providerSlug,

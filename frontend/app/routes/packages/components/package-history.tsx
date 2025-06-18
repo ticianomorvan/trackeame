@@ -1,7 +1,6 @@
 import { es } from "date-fns/locale";
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns"
-import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { ArrowLeft, ArrowRight, MapPinIcon, TriangleAlertIcon } from "lucide-react";
@@ -16,6 +15,7 @@ import { fetcher } from "utils/fetch";
 
 import type { ProviderSlug } from "types/provider";
 
+import { useAuth } from "~/contexts/auth-context";
 import { PROVIDER_LOGOS } from "~/routes/constants";
 import { getStatusBadgeColor, getStatusBadgeText } from "./utils";
 
@@ -29,8 +29,8 @@ const getRefetchInterval = (lastStatus: string | null | undefined): number | fal
 }
 
 export default function PackageHistory() {
+  const auth = useAuth();
   const params = useParams()
-  const { getAccessTokenSilently } = useAuth0()
   
   const limit = MAX_EVENTS_PER_PAGE; // This is temporary, just to test.
   const [page, setPage] = useState<number>(1);
@@ -39,13 +39,17 @@ export default function PackageHistory() {
     queryKey: ["package", params.packageId],
     queryFn: async () => {
       if (!params.packageId) {
-        throw new Error("Package ID is required");
+        throw new Error("Se necesita un ID de paquete");
       }
 
-      const token = await getAccessTokenSilently();
+      if (!auth.user) {
+        throw new Error("Por favor, inicia sesión para continuar.");
+      }
+
+      const idToken = await auth.user.getIdToken();
       
       const response = await fetcher<PackageWithProvider>(`/packages/${params.packageId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${idToken}` }
       });
       
       if (response.status === ResponseType.Error) {
