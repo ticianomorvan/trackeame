@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, TriangleAlertIcon } from "lucide-react";
 import { Badge, Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
+import { ArrowLeft, ArrowRight, SquareDashedMousePointerIcon, TriangleAlertIcon } from "lucide-react";
 
 import type { PaginatedPackagesWithProvider } from "types/package";
 import type { ProviderSlug } from "types/provider";
 
-import { ResponseType } from "types/response";
 import { PackageEventStatus } from "types/package-event";
+import { ResponseType } from "types/response";
+import { useAuth } from "contexts/auth-context";
 import { fetcher } from "utils/fetch";
 
-import { useAuth } from "~/contexts/auth-context";
-import { PROVIDER_LOGOS } from "~/routes/constants";
+import { PROVIDER_LOGOS } from "../../constants";
 import { getStatusBadgeColor, getStatusBadgeText } from "./utils";
 
 const MAX_PACKAGES_PER_PAGE = 5;
@@ -93,6 +93,20 @@ export default function DisplayPackages() {
     )
   }
 
+  if (!packages.data || packages.data.packages.length === 0) {
+    return (
+      <Callout.Root color={"gray"}>
+        <Callout.Icon>
+          <SquareDashedMousePointerIcon size={16} />
+        </Callout.Icon>
+
+        <Callout.Text>
+          No tienes paquetes registrados. Comenzá cargando tus envíos.
+        </Callout.Text>
+      </Callout.Root>
+    )
+  }
+
   return (
     <Flex
       gap={"2rem"}
@@ -107,7 +121,7 @@ export default function DisplayPackages() {
           direction={"column"}
         >
           {packages.data?.packages.map((pkg) => {
-            const lastStatus = typeof pkg.lastStatus !== "undefined"
+            const lastStatus = typeof pkg.lastStatus !== "undefined" && pkg.lastStatus !== null
               ? pkg.lastStatus as PackageEventStatus
               : PackageEventStatus.Pending;
 

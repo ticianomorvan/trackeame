@@ -15,7 +15,7 @@ import { fetcher } from "utils/fetch";
 
 import type { ProviderSlug } from "types/provider";
 
-import { useAuth } from "~/contexts/auth-context";
+import { useAuth } from "contexts/auth-context";
 import { PROVIDER_LOGOS } from "~/routes/constants";
 import { getStatusBadgeColor, getStatusBadgeText } from "./utils";
 
@@ -31,7 +31,7 @@ const getRefetchInterval = (lastStatus: string | null | undefined): number | fal
 export default function PackageHistory() {
   const auth = useAuth();
   const params = useParams()
-  
+
   const limit = MAX_EVENTS_PER_PAGE; // This is temporary, just to test.
   const [page, setPage] = useState<number>(1);
 
@@ -47,17 +47,17 @@ export default function PackageHistory() {
       }
 
       const idToken = await auth.user.getIdToken();
-      
+
       const response = await fetcher<PackageWithProvider>(`/packages/${params.packageId}`, {
         headers: { Authorization: `Bearer ${idToken}` }
       });
-      
+
       if (response.status === ResponseType.Error) {
         console.error(response.message);
 
         throw new Error(response.message);
       }
-      
+
       return response.data;
     },
   })
@@ -83,15 +83,15 @@ export default function PackageHistory() {
   });
 
   const lastStatus = typeof pkg.data !== "undefined" && pkg.data.lastStatus != null
-    ? pkg.data.lastStatus as  PackageEventStatus
+    ? pkg.data.lastStatus as PackageEventStatus
     : PackageEventStatus.Pending;
-  
+
   const lastCheckedAt = typeof pkg.data !== "undefined" && pkg.data.lastCheckedAt != null
     ? pkg.data.lastCheckedAt
     : new Date();
 
   const formattedLastCheckedAt = format(lastCheckedAt, "d 'de' MMMM 'de' yyyy 'a las' HH:mm", { locale: es });
-  
+
   const totalPages = pkgEvents.data ? Math.ceil(pkgEvents.data.length / limit) : 0;
 
   const canGoToPreviousPage = page > 1;
@@ -147,11 +147,41 @@ export default function PackageHistory() {
       </Callout.Root>
     );
   }
-  
+
+  if (pkgEvents.isLoading) {
+    return (
+      <Callout.Root color={"blue"}>
+        <Callout.Icon>
+          <Spinner />
+        </Callout.Icon>
+
+        <Callout.Text>
+          Cargando eventos del paquete...
+        </Callout.Text>
+      </Callout.Root>
+    );
+  }
+
+  if (pkgEvents.isError) {
+    return (
+      <Callout.Root color={"red"}>
+        <Callout.Icon>
+          <TriangleAlertIcon size={16} />
+        </Callout.Icon>
+
+        <Callout.Text>
+          No pudimos obtener los eventos del paquete. Inténtalo de nuevo más tarde.
+        </Callout.Text>
+      </Callout.Root>
+    );
+  }
+
+  const shouldShowEvents = pkg.data && pkgEvents.data && pkgEvents.data.length > 0;
+
   return (
     <Flex
       gap={"2rem"}
-      minHeight={"40rem"}
+      minHeight={!shouldShowEvents ? "auto" : "24rem"}
       direction={"column"}
       justify={"between"}
     >
@@ -190,108 +220,123 @@ export default function PackageHistory() {
             )}
           </Flex>
         </Flex>
-        
-        <ul>
-          <Flex
-            gap={"0.5rem"}
-            direction={"column"}
-          >
-            {shownEvents.map((event) => {
-              const eventAbsoluteDate = parseISO(String(event.occurredAt));
-              const eventFormattedDate = format(eventAbsoluteDate, "d 'de' MMMM 'de' yyyy 'a las' HH:mm", { locale: es });
 
-              const eventStatus = typeof event.status !== "undefined"
-                ? event.status as PackageEventStatus
-                : PackageEventStatus.Pending;
+        {!shouldShowEvents
+          ? (
+            <Callout.Root color={"gray"}>
+              <Callout.Icon>
+                <TriangleAlertIcon size={16} />
+              </Callout.Icon>
 
-              return (
-                <li key={event.id}>
-                  <Flex
-                    p={"1rem"}
-                    gap={"0.5rem"}
-                    direction={"column"}
-                    className="bg-[var(--accent-surface)] rounded-md shadow-sm"
-                  >
-                    <Flex
-                      width={"100%"}
-                      align={"center"}
-                      direction={"row"}
-                      justify={"between"}
-                    >
-                      <Badge color={getStatusBadgeColor(eventStatus)}>
-                        {getStatusBadgeText(eventStatus)}
-                      </Badge>
+              <Callout.Text>
+                No hay eventos registrados para este paquete.
+              </Callout.Text>
+            </Callout.Root>
+          ) : (
+            <ul>
+              <Flex
+                gap={"0.5rem"}
+                direction={"column"}
+              >
+                {shownEvents.map((event) => {
+                  const eventAbsoluteDate = parseISO(String(event.occurredAt));
+                  const eventFormattedDate = format(eventAbsoluteDate, "d 'de' MMMM 'de' yyyy 'a las' HH:mm", { locale: es });
 
+                  const eventStatus = typeof event.status !== "undefined"
+                    ? event.status as PackageEventStatus
+                    : PackageEventStatus.Pending;
+
+                  return (
+                    <li key={event.id}>
                       <Flex
+                        p={"1rem"}
                         gap={"0.5rem"}
-                        align={"center"}
-                        justify={"center"}
-                        className="text-[var(--gray-a11)]"
+                        direction={"column"}
+                        className="bg-[var(--accent-surface)] rounded-md shadow-sm"
                       >
-                        <Text size={"2"}>
-                          {eventFormattedDate}
-                        </Text>
+                        <Flex
+                          width={"100%"}
+                          align={"center"}
+                          direction={"row"}
+                          justify={"between"}
+                        >
+                          <Badge color={getStatusBadgeColor(eventStatus)}>
+                            {getStatusBadgeText(eventStatus)}
+                          </Badge>
 
-                        {event.location && (
-                          <Tooltip content={event.location}>
-                            <MapPinIcon size={16} />
-                          </Tooltip>
-                        )}
+                          <Flex
+                            gap={"0.5rem"}
+                            align={"center"}
+                            justify={"center"}
+                            className="text-[var(--gray-a11)]"
+                          >
+                            <Text size={"2"}>
+                              {eventFormattedDate}
+                            </Text>
+
+                            {event.location && (
+                              <Tooltip content={event.location}>
+                                <MapPinIcon size={16} />
+                              </Tooltip>
+                            )}
+                          </Flex>
+                        </Flex>
+
+                        <p>{event.description}</p>
                       </Flex>
-                    </Flex>
-                    
-                    <p>{event.description}</p>
-                  </Flex>
-                </li>
-              )
-            })}
-          </Flex>
-        </ul>
+                    </li>
+                  )
+                })}
+              </Flex>
+            </ul>
+          )}
       </Flex>
 
-      <Flex
-        gap={"1rem"}
-        direction={"column"}
-      >
+      {totalPages !== 0 && (
         <Flex
           gap={"1rem"}
-          align={"center"}
-          justify={"center"}
+          direction={"column"}
         >
-          <Button
-            color={"gray"}
-            variant={"soft"}
-            onClick={handlePreviousPage}
-            disabled={!canGoToPreviousPage}
+          <Flex
+            gap={"1rem"}
+            align={"center"}
+            justify={"center"}
           >
-            <ArrowLeft size={14} /> Anterior
-          </Button>
+            <Button
+              color={"gray"}
+              variant={"soft"}
+              onClick={handlePreviousPage}
+              disabled={!canGoToPreviousPage}
+            >
+              <ArrowLeft size={14} /> Anterior
+            </Button>
 
-          {totalPages && (
-            <Text>
-              Página {page} de {totalPages}
-            </Text>
-          )}
+            {totalPages && (
+              <Text>
+                Página {page} de {totalPages}
+              </Text>
+            )}
 
-          <Button
+            <Button
+              color={"gray"}
+              variant={"soft"}
+              onClick={handleNextPage}
+              disabled={!canGoToNextPage}
+            >
+              Siguiente <ArrowRight size={14} />
+            </Button>
+          </Flex>
+
+
+          <Text
+            size={"1"}
+            align={"center"}
             color={"gray"}
-            variant={"soft"}
-            onClick={handleNextPage}
-            disabled={!canGoToNextPage}
           >
-            Siguiente <ArrowRight size={14} />
-          </Button>
+            Ultima actualización: {formattedLastCheckedAt}
+          </Text>
         </Flex>
-
-
-        <Text
-          size={"1"}
-          align={"center"}
-          color={"gray"}
-        >
-          Ultima actualización: {formattedLastCheckedAt}
-        </Text>
-      </Flex>
+      )}
     </Flex>
   )
 }

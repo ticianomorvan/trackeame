@@ -4,7 +4,7 @@ import { Theme } from "@radix-ui/themes";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { AuthProvider } from "./contexts/auth-context";
+import { AuthProvider } from "../contexts/auth-context";
 
 const queryClient = new QueryClient()
 

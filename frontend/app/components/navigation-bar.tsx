@@ -8,7 +8,8 @@ import { Avatar, Button, DropdownMenu, Flex, Heading, Text } from "@radix-ui/the
 import { auth } from "utils/firebase";
 import { googleAuthProvider } from "utils/auth";
 
-import { useAuth } from "~/contexts/auth-context";
+import { useAuth } from "contexts/auth-context";
+import { useCallback } from "react";
 
 export default function NavigationBar() {
   const { user } = useAuth();
@@ -80,16 +81,26 @@ export default function NavigationBar() {
 }
 
 function RedirectToLogin() {
-  const handleLogin = () => {
-    toast.promise(
-      signInWithPopup(auth, googleAuthProvider),
-      {
-        loading: "Termina de iniciar sesión en la ventana...",
-        success: "Has iniciado sesión correctamente.",
-        error: "Error al iniciar sesión. Inténtalo de nuevo más tarde."
-      }
-    );
-  }
+  const { user } = useAuth()
+  const navigate = useNavigate();
+
+  const handleLogin = useCallback(() => {
+    if (!user) {
+      // If the user is not logged in, prompt Google sign-in
+      toast.promise(
+        signInWithPopup(auth, googleAuthProvider),
+        {
+          loading: "Termina de iniciar sesión en la ventana...",
+          success: "Has iniciado sesión correctamente.",
+          error: "Error al iniciar sesión. Inténtalo de nuevo más tarde."
+        }
+      )
+    } else {
+      // If the user is already logged in, navigate to the packages page
+      navigate("/packages")
+    }
+
+  }, [user])
 
   return (
     <Button onClick={handleLogin} variant="solid">

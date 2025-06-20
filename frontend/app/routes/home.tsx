@@ -1,10 +1,14 @@
 import type { Route } from "./+types/home";
+import { toast } from "sonner";
+import { useCallback } from "react";
+import { useNavigate } from "react-router";
 import { useMediaQuery } from "usehooks-ts";
 import { signInWithPopup } from "firebase/auth";
-import { ArrowDownIcon, TruckIcon } from "lucide-react";
+import { ArrowRightIcon, TruckIcon } from "lucide-react";
 import { Button, Flex, Heading, Link, Strong, Text } from "@radix-ui/themes";
 
 import { auth } from "utils/firebase";
+import { useAuth } from "contexts/auth-context";
 import { googleAuthProvider } from "utils/auth";
 
 import { PROVIDER_LOGOS } from "./constants";
@@ -20,16 +24,27 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const { user } = useAuth()
+  const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  const handleRegister = () => {
-    signInWithPopup(auth, googleAuthProvider)
-      .then((result) => console.log(result.user))
-      .catch((error) => {
-        console.error("Error during sign-in:", error);
-        // Handle error appropriately, e.g., show a notification to the user
-      });
-  }
+  const handleRegister = useCallback(() => {
+    if (!user) {
+      // If the user is not logged in, prompt Google sign-in
+      toast.promise(
+        signInWithPopup(auth, googleAuthProvider),
+        {
+          loading: "Termina de iniciar sesión en la ventana...",
+          success: "Has iniciado sesión correctamente.",
+          error: "Error al iniciar sesión. Inténtalo de nuevo más tarde."
+        }
+      )
+    } else {
+      // If the user is already logged in, navigate to the packages page
+      navigate("/packages")
+    }
+
+  }, [user])
 
   return (
     <Flex
@@ -96,12 +111,35 @@ export default function Home() {
             </Flex>
           </Flex>
 
-          <Button
-            size={{ initial: "3", xs: "4" }}
-            onClick={handleRegister}
+          <Flex
+            gap={"1.5rem"}
+            align={"center"}
+            direction={{
+              initial: "column-reverse",
+              xs: "row",
+            }}
           >
-            Registrá tus pedidos gratis
-          </Button>
+            <Flex
+              gap={"0.875rem"}
+              align={"center"}
+            >
+              <img src={"/google.svg"} alt="Google Logo" className="w-5 h-5" />
+
+              <Text
+                color={"gray"}
+              >
+                Empezá gratis con tu cuenta de Google
+              </Text>
+            </Flex>
+
+            <Button
+              size={"3"}
+              onClick={handleRegister}
+            >
+              Cargá tus pedidos
+              <ArrowRightIcon size={18} />
+            </Button>
+          </Flex>
         </Flex>
       </div>
 

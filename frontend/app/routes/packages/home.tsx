@@ -1,6 +1,8 @@
 import type { Route } from "./+types/home";
 
-import { Flex, Heading } from "@radix-ui/themes";
+import { Link } from "react-router";
+import { CirclePlusIcon } from "lucide-react";
+import { Button, Flex, Heading } from "@radix-ui/themes";
 
 import DisplayPackages from "./components/display-packages";
 
@@ -25,9 +27,26 @@ export default function Packages() {
         direction={"column"}
         className={"max-w-[36rem] w-full p-6 bg-[var(--accent-surface)] rounded-lg shadow-sm"}
       >
-        <Heading as="h1" className="text-2xl font-bold mb-4">
-          Tus paquetes
-        </Heading>
+        <Flex
+          align={"center"}
+          justify={"between"}
+        >
+          <Heading as={"h2"} className={"text-2xl font-bold mb-4"}>
+            Tus paquetes
+          </Heading>
+
+          <Button variant={"outline"} asChild>
+            <Flex
+              align={"center"}
+            >
+              <Link to={"/packages/register"}>
+                Registrar paquete
+              </Link>
+
+              <CirclePlusIcon size={16} />
+            </Flex>
+          </Button>
+        </Flex>
         
         <DisplayPackages />
       </Flex>

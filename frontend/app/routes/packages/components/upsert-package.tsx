@@ -1,5 +1,9 @@
+import { z } from "zod";
+import { toast } from "sonner";
 import { Link } from "react-router";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { BadgeCheckIcon, TriangleAlertIcon } from "lucide-react";
 import { Button, Callout, Flex, Select, Spinner, Text, TextField } from "@radix-ui/themes";
@@ -11,20 +15,32 @@ import { ResponseType } from "types/response";
 import { ProviderSlug } from "types/provider";
 import { fetcher } from "utils/fetch";
 
-import { useAuth } from "~/contexts/auth-context";
+import { useAuth } from "contexts/auth-context";
 import { PROVIDER_LOGOS } from "~/routes/constants";
-import { toast } from "sonner";
 
 interface UpsertPackageMutationVariables {
   trackingCode: string;
   providerSlug: string;
 }
+
+const MIN_TRACKING_CODE_LENGTH = 15; // Minimum length for tracking codes
+const MAX_TRACKING_CODE_LENGTH = 23; // Maximum length for tracking codes
+
+const formSchema = z.object({
+  providerSlug: z.string().min(1, "Por favor, seleccioná un proveedor."),
+  trackingCode: z.string()
+    .min(MIN_TRACKING_CODE_LENGTH, "El código de seguimiento debe tener al menos 15 caracteres.")
+    .max(MAX_TRACKING_CODE_LENGTH, "El código de seguimiento no puede tener más de 23 caracteres."),
+})
+
+type FormSchema = z.infer<typeof formSchema>;
   
 export default function UpsertPackage() {
   const auth = useAuth();
-
-  const [trackingCode, setTrackingCode] = useState<string>("");
-  const [providerSlug, setProviderSlug] = useState<string>("");
+  const form = useForm<FormSchema>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { providerSlug: "", trackingCode: "" },
+  })
 
   const providers = useQuery({
     queryKey: ["providers"],
@@ -77,39 +93,28 @@ export default function UpsertPackage() {
     }
   })
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!trackingCode || !providerSlug) {
-      toast.error("Por favor, completa todos los campos antes de enviar.");
-      
-      return;
-    }
-
+  const onSubmit: SubmitHandler<FormSchema> = ({ providerSlug, trackingCode }) => {
+    // TODO: remove when OCA support is ready
     if (providerSlug === ProviderSlug.OCA) {
       toast.error("El soporte de OCA está en proceso. Por favor, seleccioná otro proveedor.");
     
       return;
     }
 
-    upsertPackage.mutate({ trackingCode, providerSlug }, {
-      onSuccess: (data) => {
-        console.log("Package upserted successfully:", data);
-        
-        // Optionally reset form or show success message
-        setTrackingCode("");
-        setProviderSlug("");
+    toast.promise(upsertPackage.mutateAsync({ trackingCode, providerSlug }), {
+      loading: "Registrando paquete...",
+      success: () => {
+        form.reset(); // Reset the form after successful registration
+        return "Paquete registrado correctamente!";
       },
-      onError: (error) => {
-        console.error("Error upserting package:", error);
-
-        alert("Failed to upsert package. Please try again.");
-      }
-    });
+      error: (error) => `Error al registrar el paquete: ${error.message}`,
+    })
   }
 
+  const watchProviderSlug = form.watch("providerSlug");
+
   const trackingCodeExample = useMemo(() => {
-    switch (providerSlug) {
+    switch (watchProviderSlug) {
       case ProviderSlug.CORREO_ARGENTINO:
         return "00008945903AEAX1CL02302";
       case ProviderSlug.ANDREANI:
@@ -119,7 +124,7 @@ export default function UpsertPackage() {
       default:
         return "0000000000000000";
     }
-  }, [providerSlug]);
+  }, [watchProviderSlug]);
 
   if (providers.isLoading) {
     return (
@@ -171,34 +176,58 @@ export default function UpsertPackage() {
           </Callout.Text>
         </Callout.Root>
       )}
+
+      {(form.formState.errors.providerSlug || form.formState.errors.trackingCode) && (
+        <Callout.Root color={"red"}>
+          <Callout.Icon>
+            <TriangleAlertIcon size={16} />
+          </Callout.Icon>
+
+          <Callout.Text>
+            {
+              form.formState.errors.providerSlug?.message ||
+              form.formState.errors.trackingCode?.message ||
+              "Por favor, completa todos los campos correctamente."
+            }
+          </Callout.Text>
+        </Callout.Root>
+      )}
           
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <Flex
           gap={"1rem"}
           direction={"column"}
         >
           <Flex
             gap={"0.5rem"}
-            align={"center"}
+            align={{ initial: "start", sm: "center" }}
+            direction={{ initial: "column", sm: "row" }}
           >
             <Flex
               gap={"0.5rem"}
               align={"center"}
             >
-              {providerSlug && (
+              {watchProviderSlug && (
                 <img
-                  src={PROVIDER_LOGOS[providerSlug as ProviderSlug]}
+                  src={PROVIDER_LOGOS[watchProviderSlug as ProviderSlug]}
                   alt="Provider Logo"
                   className="w-20 h-8 object-contain"
                 />
               )}
 
-              <Select.Root value={providerSlug} onValueChange={setProviderSlug}>
+              <Select.Root
+                value={watchProviderSlug}
+                onValueChange={(value) => form.setValue("providerSlug", value)}
+                {...form.register("providerSlug")}
+              >
                 <Select.Trigger placeholder={"Seleccioná un proveedor"} />
 
                 <Select.Content>
                   {providers.data?.map((provider: Provider) => (
-                    <Select.Item key={provider.id} value={provider.slug}>
+                    <Select.Item
+                      key={provider.id}
+                      value={provider.slug}
+                    >
                       {provider.name}
                     </Select.Item>
                   ))}
@@ -208,11 +237,10 @@ export default function UpsertPackage() {
 
             <TextField.Root
               id={"tracking-code"}
-              value={trackingCode}
-              className={"my-4 grow"}
+              className={"my-4 w-full grow md:w-fit"}
               aria-label={"Código de seguimiento"}
-              placeholder={`Ejemplo: ${trackingCodeExample}`}
-              onChange={(e) => setTrackingCode(e.target.value)}
+              placeholder={`Ej. ${trackingCodeExample}`}
+              {...form.register("trackingCode")}
             />
           </Flex>
 
