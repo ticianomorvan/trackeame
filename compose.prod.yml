@@ -3,19 +3,31 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     env_file: ./api/.env
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "\
+        pg_isready -U postgres && \
+        psql -U postgres -d trackeame -c '\\q' && \
+        psql -U postgres -d umami     -c '\\q' \
+      "] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "6379:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     
   api:
     build:
@@ -25,7 +37,10 @@ services:
     restart: unless-stopped
     env_file: ./api/.env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy 
+      redis:
+        condition: service_healthy 
 
   worker:
     build:
@@ -35,8 +50,10 @@ services:
     restart: unless-stopped
     env_file: ./api/.env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy 
+      redis:
+        condition: service_healthy 
 
   umami:
     image: docker.umami.is/umami-software/umami:postgresql-latest
@@ -44,6 +61,9 @@ services:
       - "3000:3000"
     restart: unless-stopped
     env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   nginx:
     build:

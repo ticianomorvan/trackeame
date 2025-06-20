@@ -9,6 +9,7 @@ RUN apt-get update \
 
 COPY package.json pnpm-lock.yaml tsconfig.json ./
 COPY prisma ./prisma
+COPY config ./config
 COPY src ./src
 
 RUN pnpm install --frozen-lockfile
@@ -23,6 +24,8 @@ CMD ["pnpm", "exec", "tsx", "src/index.ts"]
 
 # Worker
 FROM base AS worker
+
+RUN pnpm prisma generate
 
 RUN pnpm exec playwright install --with-deps chromium 
 
