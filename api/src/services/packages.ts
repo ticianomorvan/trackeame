@@ -2,7 +2,6 @@ import { Prisma } from "../generated/prisma"
 import { prisma } from "../lib/prisma"
 import { getProviderBySlug } from "./providers"
 
-// TOOD: implement validation for providerSlug and trackingCode
 export async function createPackage(userId: string, providerSlug: string, trackingCode: string) {
   try {
     const provider = await getProviderBySlug(providerSlug)
@@ -23,7 +22,6 @@ export async function createPackage(userId: string, providerSlug: string, tracki
   }
 }
 
-// TODO: implement validation for providerId and trackingCode
 export async function getPackageByTrackingCode(userId: string, providerId: string, trackingCode: string) {
   try {
     const packageEntry = await prisma.package.findUniqueOrThrow({
@@ -75,7 +73,6 @@ export async function getPackagesCount(userId: string) {
   }
 }
 
-// TODO: implement validation for id
 export async function getPackageById(userId: string, id: string) {
   try {
     const packageEntry = await prisma.package.findUniqueOrThrow({
@@ -90,5 +87,21 @@ export async function getPackageById(userId: string, id: string) {
     }
 
     throw new Error(`Failed to get package entry: ${(error as Error).message}`)
+  }
+}
+
+export async function deletePackage(userId: string, id: string) {
+  try {
+    const packageEntry = await prisma.package.delete({
+      where: { id, userId }
+    })
+
+    return packageEntry
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      throw new Error(`Package with ID ${id} doesn't exist.`)
+    }
+
+    throw new Error(`Failed to delete package entry: ${(error as Error).message}`)
   }
 }

@@ -4,8 +4,8 @@ import { FastifyPluginAsync } from "fastify";
 
 import { Package } from "../generated/prisma";
 import { getPackageEvents } from "../services/package-events";
-import { createPackage, getPackages, getPackageById, getPackagesCount } from "../services/packages";
 import { packagesQueue, PackagesQueueJobName, PackagesQueueJobPayload } from "../queues/packages";
+import { createPackage, getPackages, getPackageById, getPackagesCount, deletePackage } from "../services/packages";
 
 const packagesRoutes: FastifyPluginAsync = async (fastify) => {
   // TODO: implement validation for providerSlug and trackingCode
@@ -134,6 +134,36 @@ const packagesRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(500).send({
         status: ResponseType.Error,
         message: (error as Error).message || "Failed to retrieve package entry",
+      } satisfies FailedResponse);
+    }
+  })
+
+  fastify.delete("/packages/:id", async (request, reply) => {
+    const user = request.internal_user;
+
+    if (!user) {
+      return reply.status(401).send({
+        status: ResponseType.Error,
+        message: "User not authenticated",
+      } satisfies FailedResponse);
+    }
+
+    const { id } = request.params as { id: string };
+
+    try {
+      const packageEntry = await deletePackage(user.id, id);
+
+      return reply.status(200).send({
+        status: ResponseType.Success,
+        message: "Package entry deleted successfully",
+        data: packageEntry,
+      } satisfies SuccessfulResponse<typeof packageEntry>);
+    } catch (error) {
+      fastify.log.error("Error deleting package entry:", error);
+
+      return reply.status(500).send({
+        status: ResponseType.Error,
+        message: (error as Error).message || "Failed to delete package entry",
       } satisfies FailedResponse);
     }
   })

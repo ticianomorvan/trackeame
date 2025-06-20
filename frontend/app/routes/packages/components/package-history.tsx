@@ -14,9 +14,9 @@ import { ResponseType } from "types/response";
 import { fetcher } from "utils/fetch";
 
 import type { ProviderSlug } from "types/provider";
-
 import { useAuth } from "contexts/auth-context";
-import { PROVIDER_LOGOS } from "~/routes/constants";
+
+import { PROVIDER_LOGOS } from "../../constants";
 import { getStatusBadgeColor, getStatusBadgeText } from "./utils";
 
 const MAX_EVENTS_PER_PAGE = 5;
@@ -69,7 +69,15 @@ export default function PackageHistory() {
         throw new Error("Package ID is required");
       }
 
-      const response = await fetcher<PackageEvent[]>(`/packages/${params.packageId}/tracking`);
+      if (!auth.user) {
+        throw new Error("Por favor, iniciá sesión para continuar.");
+      }
+
+      const idToken = await auth.user.getIdToken();
+
+      const response = await fetcher<PackageEvent[]>(`/packages/${params.packageId}/tracking`, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
 
       if (response.status === ResponseType.Error) {
         console.error(response.message);
