@@ -14,11 +14,11 @@ export function meta({}: Route.MetaArgs) {
 export default function RegisterPackage() {
   return (
     <Flex
+      width={"100%"}
+      height={"100%"}
       align={"center"}
       justify={"center"}
       direction={"column"}
-      width={"100%"}
-      height={"100%"}
     >
       <Flex
         gap={"1rem"}

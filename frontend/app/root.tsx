@@ -52,11 +52,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Providers>
-      <NavigationBar />
+      <div className="w-full h-screen grid grid-rows-[auto_1fr] md:flex md:flex-col">
+        <NavigationBar />
 
-      <main className="w-full min-h-fit h-full bg-[var(--accent-a3)]">
-        <Outlet />
-      </main>
+        <main className="w-full h-full bg-[var(--accent-a3)] overflow-auto">
+          <Outlet />
+        </main>
+      </div>
     </Providers>
   );
 }

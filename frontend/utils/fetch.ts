@@ -6,19 +6,13 @@ const API_URL = typeof import.meta.env.VITE_API_URL !== "undefined" && import.me
 
 const defaultConfig: RequestInit = {
   method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-  },
 }
 
 export async function fetcher<T>(endpoint: string, config: RequestInit = defaultConfig): Promise<CustomResponse<T>> {
   const response = await fetch(API_URL.concat(endpoint), {
     ...defaultConfig,
     ...config,
-    headers: {
-      ...defaultConfig.headers,
-      ...config.headers,
-    },
+    headers: { ...config.headers, },
   });
 
   const result: CustomResponse<T> = await response.json();

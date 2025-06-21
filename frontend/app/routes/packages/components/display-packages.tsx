@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { useMediaQuery } from "usehooks-ts";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Badge, Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
 import { ArrowLeft, ArrowRight, SquareDashedMousePointerIcon, TriangleAlertIcon } from "lucide-react";
@@ -21,6 +22,7 @@ export default function DisplayPackages() {
   const limit = MAX_PACKAGES_PER_PAGE // This is temporary, just to test.
   
   const auth = useAuth();
+  const isMobile = useMediaQuery("(max-width: 768px)");
   
   const [page, setPage] = useState<number>(1);
   
@@ -110,8 +112,7 @@ export default function DisplayPackages() {
   return (
     <Flex
       gap={"2rem"}
-      height={"22rem"}
-      maxHeight={"22rem"}
+      height={"100%"}
       justify={"between"}
       direction={"column"}
     >
@@ -133,7 +134,10 @@ export default function DisplayPackages() {
                     py={"2"}
                     gap={"1rem"}
                     align={"center"}
-                    maxHeight={"3rem"}
+                    maxHeight={{
+                      initial: "auto",
+                      sm: "4rem",
+                    }}
                     className={"bg-[var(--accent-surface)] rounded-md shadow-sm hover:bg-[var(--accent-a1)]"}
                   >
                     <img
@@ -146,7 +150,11 @@ export default function DisplayPackages() {
                       {getStatusBadgeText(lastStatus)}
                     </Badge>
                 
-                    {pkg.trackingCode}
+                    <Text
+                      className={"text-ellipsis overflow-hidden whitespace-nowrap"}
+                    >
+                      {pkg.trackingCode}
+                    </Text>
                   </Flex>
                 </Link>
               </li>
@@ -166,7 +174,11 @@ export default function DisplayPackages() {
           onClick={handlePreviousPage}
           disabled={!canGoToPreviousPage}
         >
-          <ArrowLeft size={14} /> Anterior
+          <ArrowLeft size={14} />
+          
+          <Text hidden={isMobile}>
+            Anterior
+          </Text>
         </Button>
 
         {(packages.data?.total && packages.data?.limit) && (
@@ -181,7 +193,11 @@ export default function DisplayPackages() {
           onClick={handleNextPage}
           disabled={!canGoToNextPage}
         >
-          Siguiente <ArrowRight size={14} />
+          <Text hidden={isMobile}>
+            Siguiente
+          </Text>
+
+          <ArrowRight size={14} />
         </Button>
       </Flex>
     </Flex>

@@ -1,8 +1,9 @@
 import type { Route } from "./+types/home";
 
 import { Link } from "react-router";
+import { useMediaQuery } from "usehooks-ts";
 import { CirclePlusIcon } from "lucide-react";
-import { Button, Flex, Heading } from "@radix-ui/themes";
+import { Button, Flex, Heading, Text } from "@radix-ui/themes";
 
 import DisplayPackages from "./components/display-packages";
 
@@ -14,6 +15,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Packages() {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   return (
     <Flex
       width={"100%"}
@@ -25,7 +28,7 @@ export default function Packages() {
       <Flex
         gap={"1rem"}
         direction={"column"}
-        className={"max-w-[36rem] w-full p-6 bg-[var(--accent-surface)] rounded-lg shadow-sm"}
+        className={"max-w-[36rem] w-full h-full p-6 bg-[var(--accent-surface)] rounded-lg shadow-sm sm:h-fit"}
       >
         <Flex
           align={"center"}
@@ -35,17 +38,15 @@ export default function Packages() {
             Tus paquetes
           </Heading>
 
-          <Button variant={"outline"} asChild>
-            <Flex
-              align={"center"}
-            >
-              <Link to={"/packages/register"}>
+          <Link to={"/packages/register"}>
+            <Button variant={"outline"}>
+              <Text hidden={isMobile}>
                 Registrar paquete
-              </Link>
+              </Text>
 
               <CirclePlusIcon size={16} />
-            </Flex>
-          </Button>
+            </Button>
+          </Link>
         </Flex>
         
         <DisplayPackages />

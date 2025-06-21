@@ -67,7 +67,7 @@ export default function UpsertPackage() {
 
   const upsertPackage = useMutation({
     mutationKey: ["upsert-package"],
-    mutationFn: async ({ trackingCode, providerSlug }: UpsertPackageMutationVariables) => {
+    mutationFn: async ({ providerSlug, trackingCode }: UpsertPackageMutationVariables) => {
       if (!auth.user) {
         throw new Error("Por favor, inicia sesión para continuar.");
       }
@@ -76,11 +76,11 @@ export default function UpsertPackage() {
 
       const response = await fetcher<PackageWithProvider>("/packages", {
         method: "POST",
-        headers: { Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({
-          trackingCode,
-          providerSlug,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ providerSlug, trackingCode }),
       })
 
       if (response.status === ResponseType.Error) {

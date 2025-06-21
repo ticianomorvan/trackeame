@@ -18,9 +18,7 @@ export default function NavigationBar() {
   const iconSize = isMobile ? 16 : 20;
 
   return (
-    <nav
-      className="fixed top-0 left-0 w-full z-50"
-    >
+    <nav className="w-full">
       <Flex
         p={"1rem"}
         width={"100%"}

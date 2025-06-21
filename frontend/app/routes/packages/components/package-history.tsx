@@ -1,8 +1,9 @@
 import { es } from "date-fns/locale";
-import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns"
-import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
+import { useMemo, useState } from "react";
+import { useMediaQuery } from "usehooks-ts";
+import { format, parseISO } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, MapPinIcon, TriangleAlertIcon } from "lucide-react";
 import { Badge, Button, Callout, Flex, Heading, Spinner, Text, Tooltip } from "@radix-ui/themes";
 
@@ -31,6 +32,7 @@ const getRefetchInterval = (lastStatus: string | null | undefined): number | fal
 export default function PackageHistory() {
   const auth = useAuth();
   const params = useParams()
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const limit = MAX_EVENTS_PER_PAGE; // This is temporary, just to test.
   const [page, setPage] = useState<number>(1);
@@ -189,9 +191,9 @@ export default function PackageHistory() {
   return (
     <Flex
       gap={"2rem"}
-      minHeight={!shouldShowEvents ? "auto" : "24rem"}
-      direction={"column"}
+      height={"100%"}
       justify={"between"}
+      direction={"column"}
     >
       <Flex
         gap={"1rem"}
@@ -199,16 +201,23 @@ export default function PackageHistory() {
       >
         <Flex
           gap={"0.5rem"}
-          align={"center"}
+          align={{
+            initial: "start",
+            md: "center"
+          }}
+          direction={{
+            initial: "column",
+            md: "row"
+          }}
           justify={"between"}
         >
           <Heading
-            as={"h3"}
+            as={"h2"}
             size={"4"}
             color={"gray"}
             weight={"regular"}
           >
-            Nº <strong>{pkg.data?.trackingCode}</strong>
+            Paquete Nº <strong>{pkg.data?.trackingCode}</strong>
           </Heading>
 
           <Flex
@@ -316,7 +325,11 @@ export default function PackageHistory() {
               onClick={handlePreviousPage}
               disabled={!canGoToPreviousPage}
             >
-              <ArrowLeft size={14} /> Anterior
+              <ArrowLeft size={14} />
+              
+              <Text hidden={isMobile}>
+                Anterior
+              </Text>
             </Button>
 
             {totalPages && (
@@ -331,7 +344,11 @@ export default function PackageHistory() {
               onClick={handleNextPage}
               disabled={!canGoToNextPage}
             >
-              Siguiente <ArrowRight size={14} />
+              <Text hidden={isMobile}>
+                Siguiente
+              </Text>
+
+              <ArrowRight size={14} />
             </Button>
           </Flex>
 
