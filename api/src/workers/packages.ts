@@ -5,11 +5,20 @@ import { Worker } from "bullmq";
 import { prisma } from "../lib/prisma";
 import { connection } from "../lib/redis";
 
-import { PackageEventStatus } from "../types/package-events";
-import { PACKAGES_QUEUE_NAME, packagesQueue, PackagesQueueJobName, PackagesQueueJobPayload } from "../queues/packages";
+import {
+  PACKAGES_QUEUE_NAME,
+  packagesQueue,
+  PackagesQueueJobName,
+  PackagesQueueJobPayload
+} from "../queues/packages";
 
-import { trackCorreoArgentinoPackage } from "../services/integrations/correo-argentino";
+import { PackageEventStatus } from "../types/package-events";
+
+import { sendNotificationEmail } from "../services/email";
 import { trackAndreaniPackage } from "../services/integrations/andreani";
+import { trackCorreoArgentinoPackage } from "../services/integrations/correo-argentino";
+
+import { logger } from "./logger";
 
 const providerHandlers: Record<ProviderSlug, ProviderHandler> = {
   [ProviderSlug.CORREO_ARGENTINO]: trackCorreoArgentinoPackage,
@@ -19,7 +28,7 @@ const providerHandlers: Record<ProviderSlug, ProviderHandler> = {
   }
 }
 
-const worker = new Worker(PACKAGES_QUEUE_NAME, async (job) => {
+export const worker = new Worker(PACKAGES_QUEUE_NAME, async (job) => {
   switch (job.name) {
     case PackagesQueueJobName.SYNC_ALL_PACKAGES:
       const pendingPackages = await prisma.package.findMany({
@@ -40,20 +49,17 @@ const worker = new Worker(PACKAGES_QUEUE_NAME, async (job) => {
       })
 
       if (!pendingPackages || pendingPackages.length === 0) {
-        console.log(`[${worker.name}] No pending packages to sync.`);
-        
+        logger.info(`[${worker.name}] No pending packages to sync.`);
+
         return pendingPackages;
       }
 
-      console.log(`[${worker.name}] Found ${pendingPackages.length} pending packages to sync.`);
+      logger.info(`[${worker.name}] Found ${pendingPackages.length} pending packages to sync.`);
 
       for (const pendingPackage of pendingPackages) {
-        await packagesQueue.add(
-          PackagesQueueJobName.FETCH_PACKAGE_EVENTS,
+        await packagesQueue.add(PackagesQueueJobName.FETCH_PACKAGE_EVENTS,
           {
-            packageId: pendingPackage.id,
-            providerSlug: pendingPackage.provider.slug as ProviderSlug,
-            trackingCode: pendingPackage.trackingCode,
+            packageId: pendingPackage.id
           } as PackagesQueueJobPayload[PackagesQueueJobName.FETCH_PACKAGE_EVENTS],
           {
             jobId: `${pendingPackage.provider.slug}-${pendingPackage.trackingCode}`,
@@ -66,13 +72,23 @@ const worker = new Worker(PACKAGES_QUEUE_NAME, async (job) => {
       return pendingPackages;
 
     case PackagesQueueJobName.FETCH_PACKAGE_EVENTS:
-      console.log(`[${worker.name}] Fetching package events for job ID: ${job.id}`);
+      logger.info(`[${worker.name}] Fetching package events for job ID: ${job.id}`);
 
-      const {
-        packageId,
-        providerSlug,
-        trackingCode
-      } = job.data as PackagesQueueJobPayload[PackagesQueueJobName.FETCH_PACKAGE_EVENTS]
+      const { packageId } = job.data as PackagesQueueJobPayload[PackagesQueueJobName.FETCH_PACKAGE_EVENTS]
+
+      const currentPackage = await prisma.package.findUnique({
+        where: { id: packageId },
+        include: {
+          events: true,
+          provider: true
+        }
+      });
+
+      if (!currentPackage) {
+        throw new Error(`Package with ID ${packageId} not found.`);
+      }
+
+      const providerSlug = currentPackage.provider.slug as ProviderSlug;
 
       const providerHandler = providerHandlers[providerSlug];
 
@@ -80,38 +96,49 @@ const worker = new Worker(PACKAGES_QUEUE_NAME, async (job) => {
         throw new Error(`No handler found for provider slug: ${providerSlug}`);
       }
 
+      const { trackingCode } = currentPackage;
+
       const events = await providerHandler({ packageId, trackingCode })
 
       if (!events || !Array.isArray(events)) {
         throw new Error(`Provider handler did not return valid events for packageId: ${packageId}`);
       }
 
+      const updatedPackage = await prisma.package.findUnique({
+        where: { id: packageId },
+        include: {
+          events: true,
+          provider: true,
+          user: true
+        }
+      });
+
+      if (!updatedPackage) {
+        throw new Error(`Package with ID ${packageId} not found after fetching events.`);
+      }
+
+      const hasUpdates =
+        (currentPackage.lastStatus !== updatedPackage.lastStatus) ||
+        (currentPackage.events.length < updatedPackage.events.length)
+
+      if (hasUpdates) {
+        logger.info(`[${worker.name}] Package ${updatedPackage.id} has updates. Notifying user.`);
+        
+        try {
+          await sendNotificationEmail({
+            toAddress: updatedPackage.user.email,
+            data: {
+              pkg: updatedPackage,
+              provider: updatedPackage.provider
+            }
+          })
+        } catch (error) {
+          logger.error(`[${worker.name}] Failed to send notification email for package ${updatedPackage.id}: ${(error as Error).message}`);
+        }
+      }
+
       return events;
-    
     default:
       throw new Error(`Unknown job name: ${job.name}`);
   }
 }, { connection })
-
-worker.on("completed", (job) => {
-  console.log(`[${worker.name}] Job (ID: ${job.id}) completed: ${job.name}.`);
-
-  switch (job.name) {
-    case PackagesQueueJobName.SYNC_ALL_PACKAGES:
-      console.log(`[${worker.name}] Synced ${job.returnvalue.length} packages successfully.`);
-
-      break;
-
-    case PackagesQueueJobName.FETCH_PACKAGE_EVENTS:
-      console.log(`[${worker.name}] Fetched ${job.returnvalue.length} package events for packageId: ${job.data.packageId}.`);
-      
-      break;
-  }
-});
-
-worker.on("failed", (job, err) => {
-  console.log(`[${worker.name}] Job failed: ${job?.id} - ${job?.name}.`);
-  console.log(`[${worker.name}] Error: ${err.message || err}.`);
-});
-
-export default worker;

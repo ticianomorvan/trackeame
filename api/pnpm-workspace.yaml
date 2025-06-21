@@ -1,6 +1,9 @@
 ignoredBuiltDependencies:
   - esbuild
-
 onlyBuiltDependencies:
   - '@firebase/util'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - msgpackr-extract
+  - prisma
   - protobufjs

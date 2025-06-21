@@ -1,5 +1,3 @@
-import type { ProviderSlug } from "../types/providers";
-
 import { Queue } from "bullmq";
 
 import { connection } from "../lib/redis";
@@ -17,8 +15,6 @@ export interface PackagesQueueJobPayload {
 
   [PackagesQueueJobName.FETCH_PACKAGE_EVENTS]: {
     packageId: string;
-    providerSlug: ProviderSlug;
-    trackingCode: string;
   };
 }
 

@@ -8,7 +8,6 @@ import { packagesQueue, PackagesQueueJobName, PackagesQueueJobPayload } from "..
 import { createPackage, getPackages, getPackageById, getPackagesCount, deletePackage } from "../services/packages";
 
 const packagesRoutes: FastifyPluginAsync = async (fastify) => {
-  // TODO: implement validation for providerSlug and trackingCode
   fastify.post("/packages", async (request, reply) => {
     const user = request.internal_user;
 
@@ -35,9 +34,7 @@ const packagesRoutes: FastifyPluginAsync = async (fastify) => {
       await packagesQueue.add(
         PackagesQueueJobName.FETCH_PACKAGE_EVENTS,
         {
-          packageId: packageEntry.id,
-          providerSlug: packageEntry.provider.slug,
-          trackingCode: packageEntry.trackingCode,
+          packageId: packageEntry.id
         } as PackagesQueueJobPayload[PackagesQueueJobName.FETCH_PACKAGE_EVENTS],
         {
           jobId: `${packageEntry.provider.slug}-${packageEntry.trackingCode}-initial-fetch`,
@@ -107,7 +104,6 @@ const packagesRoutes: FastifyPluginAsync = async (fastify) => {
     }
   })
 
-  // TODO: implement validation for id
   fastify.get("/packages/:id", async (request, reply) => {
     const user = request.internal_user;
 
@@ -168,7 +164,6 @@ const packagesRoutes: FastifyPluginAsync = async (fastify) => {
     }
   })
 
-  // TODO: implement validation for id
   fastify.get("/packages/:id/tracking", async (request, reply) => {
     const { id } = request.params as { id: string };
     

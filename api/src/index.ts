@@ -2,8 +2,6 @@ import "dotenv/config";
 
 import Fastify from "fastify"
 import fastifyCors from "@fastify/cors";
-import fastifySwagger from "@fastify/swagger";
-import fastifyApiReference from "@scalar/fastify-api-reference";
 
 // Helpers
 import { env } from "./lib/env";
@@ -25,34 +23,7 @@ fastify.register(fastifyCors, {
   credentials: true,
 })
 
-fastify.register(fastifySwagger, {
-  openapi: {
-    openapi: "3.0.0",
-    info: {
-      title: "Trackealo API",
-      description: "API for tracking packages from various providers",
-      version: "1.0.0",
-    },
-    servers: [
-      {
-        url: `http://localhost:8000`,
-        description: "Development server"
-      }
-    ],
-    tags: [
-      { name: "Packages", description: "Operations related to package tracking" },
-      { name: "Providers", description: "Operations related to package providers" }
-    ],
-  }
-})
-
-fastify.register(
-  fastifyApiReference,
-  { routePrefix: "/reference" }
-)
-
 fastify.register(firebasePlugin)
-
 fastify.register(packagesRoutes)
 fastify.register(providersRoutes)
 
