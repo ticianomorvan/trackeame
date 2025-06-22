@@ -36,7 +36,7 @@ export const sendNotificationEmail = async ({ data, toAddress }: SendNotificatio
     : null;
 
   const sendEmailCommand = new SendEmailCommand({
-    Source: env.AWS_SES_SOURCE_ADDRESS,
+    Source: `Ticiano Morvan <${env.AWS_SES_SOURCE_ADDRESS}>`,
     Destination: { ToAddresses: [toAddress] },
     Message: {
       Subject: {
