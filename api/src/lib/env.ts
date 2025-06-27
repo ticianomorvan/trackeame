@@ -9,10 +9,8 @@ const envSchema = z.object({
   REDIS_HOST: z.string().default("localhost"),
   REDIS_PORT: z.coerce.number().default(6379),
 
-  AWS_REGION: z.string().default("us-east-1"),
-  AWS_ACCESS_KEY_ID: z.string().optional(),
-  AWS_SECRET_ACCESS_KEY: z.string().optional(),
-  AWS_SES_SOURCE_ADDRESS: z.string().email().optional(),
+  RESEND_API_KEY: z.string(),
+  RESEND_SOURCE_ADDRESS: z.string().email(),
 
   FRONTEND_URL: z.string().url().default("http://localhost:5173"),
   DATABASE_URL: z.string().url().default("postgres://postgres:postgres@localhost:5432/trackeame"),
